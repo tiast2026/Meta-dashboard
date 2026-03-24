@@ -33,7 +33,7 @@ export default function ClientDetailPage() {
         setClient(data);
       }
     } catch (err) {
-      console.error("\u30AF\u30E9\u30A4\u30A2\u30F3\u30C8\u53D6\u5F97\u30A8\u30E9\u30FC:", err);
+      console.error("クライアント取得エラー:", err);
     } finally {
       setLoading(false);
     }
@@ -52,13 +52,13 @@ export default function ClientDetailPage() {
   };
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-500">\u8AAD\u307F\u8FBC\u307F\u4E2D...</div>;
+    return <div className="text-center py-12 text-gray-500">読み込み中...</div>;
   }
 
   if (!client) {
     return (
       <div className="text-center py-12 text-gray-500">
-        \u30AF\u30E9\u30A4\u30A2\u30F3\u30C8\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093
+        クライアントが見つかりません
       </div>
     );
   }
@@ -71,7 +71,7 @@ export default function ClientDetailPage() {
         href="/admin"
         className="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-block"
       >
-        &larr; \u30AF\u30E9\u30A4\u30A2\u30F3\u30C8\u4E00\u89A7\u306B\u623B\u308B
+        &larr; クライアント一覧に戻る
       </Link>
 
       <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
@@ -84,7 +84,7 @@ export default function ClientDetailPage() {
                 <span className="font-mono">{client.instagram_account_id}</span>
               </p>
               <p>
-                <span className="font-medium">\u5E83\u544A\u30A2\u30AB\u30A6\u30F3\u30C8 ID:</span>{" "}
+                <span className="font-medium">広告アカウント ID:</span>{" "}
                 <span className="font-mono">{client.meta_ad_account_id}</span>
               </p>
             </div>
@@ -98,7 +98,7 @@ export default function ClientDetailPage() {
 
         <div className="flex items-center gap-3">
           <Label className="text-sm font-medium whitespace-nowrap">
-            \u5171\u6709\u30EA\u30F3\u30AF:
+            共有リンク:
           </Label>
           <Input
             readOnly
@@ -106,24 +106,24 @@ export default function ClientDetailPage() {
             className="font-mono text-sm flex-1"
           />
           <Button variant="outline" size="sm" onClick={copyShareLink}>
-            {copied ? "\u30B3\u30D4\u30FC\u6E08\u307F" : "\u30B3\u30D4\u30FC"}
+            {copied ? "コピー済み" : "コピー"}
           </Button>
         </div>
       </div>
 
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          \u30C7\u30FC\u30BF\u30BD\u30FC\u30B9
+          データソース
         </h3>
         <p className="text-sm text-gray-600">
-          \u30C7\u30FC\u30BF\u306FGAS\uFF08Google Apps Script\uFF09\u7D4C\u7531\u3067BigQuery\u306B\u81EA\u52D5\u53D6\u8FBC\u3055\u308C\u307E\u3059\u3002
-          \u624B\u52D5\u30A4\u30F3\u30DD\u30FC\u30C8\u306F\u4E0D\u8981\u3067\u3059\u3002
+          データはGAS（Google Apps Script）経由でBigQueryに自動取込されます。
+          手動インポートは不要です。
         </p>
         <div className="mt-4 text-sm text-gray-500 space-y-1">
-          <p>\u30FBinstagram_analytics.raw_account_insights\uFF08\u65E5\u6B21\u30A4\u30F3\u30B5\u30A4\u30C8\uFF09</p>
-          <p>\u30FBinstagram_analytics.raw_post_insights\uFF08\u6295\u7A3F\u30A4\u30F3\u30B5\u30A4\u30C8\uFF09</p>
-          <p>\u30FBinstagram_analytics.raw_tagged_posts\uFF08\u30BF\u30B0\u4ED8\u3051\u6295\u7A3F\uFF09</p>
-          <p>\u30FBmeta_ads.raw_ad_insights\uFF08Meta\u5E83\u544A\u30C7\u30FC\u30BF\uFF09</p>
+          <p>・instagram_analytics.raw_account_insights（日次インサイト）</p>
+          <p>・instagram_analytics.raw_post_insights（投稿インサイト）</p>
+          <p>・instagram_analytics.raw_tagged_posts（タグ付け投稿）</p>
+          <p>・meta_ads.raw_ad_insights（Meta広告データ）</p>
         </div>
       </div>
     </div>
