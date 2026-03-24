@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { queryOne, runDML, table, DATASET_MASTER } from '@/lib/bq';
 
 const T = table(DATASET_MASTER, 'clients');
@@ -9,11 +7,6 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const client = await queryOne(
     `SELECT * FROM ${T} WHERE client_id = @id LIMIT 1`,
     { id: params.id }
@@ -30,11 +23,6 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const body = await request.json();
   const sets: string[] = [];
   const bqParams: Record<string, unknown> = { id: params.id };
@@ -71,11 +59,6 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const existing = await queryOne(`SELECT client_id FROM ${T} WHERE client_id = @id LIMIT 1`, { id: params.id });
   if (!existing) {
     return NextResponse.json({ error: 'Client not found' }, { status: 404 });

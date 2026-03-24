@@ -1,27 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { queryRows, runDML, table, DATASET_MASTER } from '@/lib/bq';
 import { v4 as uuidv4 } from 'uuid';
 
 const T = table(DATASET_MASTER, 'clients');
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const clients = await queryRows(`SELECT * FROM ${T} ORDER BY created_at DESC`);
   return NextResponse.json(clients);
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const body = await request.json();
   const { name, instagram_account_id, meta_ad_account_id } = body;
 

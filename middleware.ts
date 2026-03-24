@@ -1,3 +1,2 @@
-export { default } from "next-auth/middleware";
-
-export const config = { matcher: ["/admin/((?!login).*)"] };
+// No authentication middleware needed - dashboard uses URL-based access
+export const config = { matcher: [] };
