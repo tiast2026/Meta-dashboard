@@ -15,9 +15,9 @@ interface DateRangePickerProps {
 }
 
 const presets = [
-  { label: "7日", days: 7 },
-  { label: "30日", days: 30 },
-  { label: "90日", days: 90 },
+  { label: "7\u65E5", days: 7 },
+  { label: "30\u65E5", days: 30 },
+  { label: "90\u65E5", days: 90 },
 ]
 
 export function DateRangePicker({ from, to, onChange }: DateRangePickerProps) {
@@ -46,7 +46,7 @@ export function DateRangePicker({ from, to, onChange }: DateRangePickerProps) {
   const displayText =
     fromDate && toDate
       ? `${format(fromDate, "yyyy/MM/dd")} - ${format(toDate, "yyyy/MM/dd")}`
-      : "期間を選択"
+      : "\u671F\u9593\u3092\u9078\u629E"
 
   return (
     <div className="flex items-center gap-2">
@@ -62,11 +62,11 @@ export function DateRangePicker({ from, to, onChange }: DateRangePickerProps) {
       ))}
 
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="min-w-[220px] justify-start gap-2">
-            <CalendarIcon className="size-4 text-muted-foreground" />
-            <span className="text-sm">{displayText}</span>
-          </Button>
+        <PopoverTrigger
+          className="inline-flex items-center justify-start gap-2 min-w-[220px] rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-sm hover:bg-accent hover:text-accent-foreground"
+        >
+          <CalendarIcon className="size-4 text-muted-foreground" />
+          <span className="text-sm">{displayText}</span>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar

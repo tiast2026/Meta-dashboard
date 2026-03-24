@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, ensureDb } from '@/lib/db';
+import { queryOne, queryRows, table, DATASET_MASTER, DATASET_IG } from '@/lib/bq';
+
+const T_CLIENTS = table(DATASET_MASTER, 'clients');
+const T_DAILY = table(DATASET_IG, 'raw_account_insights');
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { token: string } }
 ) {
-  await ensureDb();
-
-  const clientResult = await db.execute({
-    sql: 'SELECT * FROM clients WHERE share_token = ?',
-    args: [params.token],
-  });
-  const client = clientResult.rows[0];
+  const client = await queryOne<{ client_id: string; name: string }>(
+    `SELECT client_id, name FROM ${T_CLIENTS} WHERE share_token = @token LIMIT 1`,
+    { token: params.token }
+  );
 
   if (!client) {
     return NextResponse.json({ error: 'Client not found' }, { status: 404 });
@@ -33,15 +33,15 @@ export async function GET(
   const prevFromStr = prevFrom.toISOString().split('T')[0];
   const prevToStr = prevTo.toISOString().split('T')[0];
 
-  const dailyResult = await db.execute({
-    sql: `SELECT * FROM instagram_daily_insights
-     WHERE client_id = ? AND date >= ? AND date <= ?
+  const daily = await queryRows(
+    `SELECT * FROM ${T_DAILY}
+     WHERE client_id = @cid AND date >= @from AND date <= @to
      ORDER BY date ASC`,
-    args: [client.id, from, to],
-  });
+    { cid: client.client_id, from, to }
+  );
 
-  const kpiResult = await db.execute({
-    sql: `SELECT
+  const kpi = await queryOne<Record<string, number>>(
+    `SELECT
       COALESCE(SUM(impressions), 0) as impressions,
       COALESCE(SUM(reach), 0) as reach,
       COALESCE(SUM(interactions), 0) as interactions,
@@ -51,25 +51,22 @@ export async function GET(
       COALESCE(SUM(shares), 0) as shares,
       COALESCE(SUM(follows), 0) as follows,
       COALESCE(SUM(posts_count), 0) as posts_count
-    FROM instagram_daily_insights
-    WHERE client_id = ? AND date >= ? AND date <= ?`,
-    args: [client.id, from, to],
-  });
+    FROM ${T_DAILY}
+    WHERE client_id = @cid AND date >= @from AND date <= @to`,
+    { cid: client.client_id, from, to }
+  );
 
-  const latestFollowersResult = await db.execute({
-    sql: `SELECT followers FROM instagram_daily_insights
-    WHERE client_id = ? AND date >= ? AND date <= ?
+  const latestFollowers = await queryOne<{ followers: number }>(
+    `SELECT followers FROM ${T_DAILY}
+    WHERE client_id = @cid AND date >= @from AND date <= @to
     ORDER BY date DESC LIMIT 1`,
-    args: [client.id, from, to],
-  });
+    { cid: client.client_id, from, to }
+  );
 
-  const kpi = {
-    ...kpiResult.rows[0],
-    followers: latestFollowersResult.rows[0]?.followers || 0,
-  };
+  const kpiResult = { ...kpi, followers: latestFollowers?.followers || 0 };
 
-  const prevKpiResult = await db.execute({
-    sql: `SELECT
+  const previousKpi = await queryOne<Record<string, number>>(
+    `SELECT
       COALESCE(SUM(impressions), 0) as impressions,
       COALESCE(SUM(reach), 0) as reach,
       COALESCE(SUM(interactions), 0) as interactions,
@@ -79,27 +76,24 @@ export async function GET(
       COALESCE(SUM(shares), 0) as shares,
       COALESCE(SUM(follows), 0) as follows,
       COALESCE(SUM(posts_count), 0) as posts_count
-    FROM instagram_daily_insights
-    WHERE client_id = ? AND date >= ? AND date <= ?`,
-    args: [client.id, prevFromStr, prevToStr],
-  });
+    FROM ${T_DAILY}
+    WHERE client_id = @cid AND date >= @from AND date <= @to`,
+    { cid: client.client_id, from: prevFromStr, to: prevToStr }
+  );
 
-  const prevLatestFollowersResult = await db.execute({
-    sql: `SELECT followers FROM instagram_daily_insights
-    WHERE client_id = ? AND date >= ? AND date <= ?
+  const prevLatestFollowers = await queryOne<{ followers: number }>(
+    `SELECT followers FROM ${T_DAILY}
+    WHERE client_id = @cid AND date >= @from AND date <= @to
     ORDER BY date DESC LIMIT 1`,
-    args: [client.id, prevFromStr, prevToStr],
-  });
+    { cid: client.client_id, from: prevFromStr, to: prevToStr }
+  );
 
-  const previous_kpi = {
-    ...prevKpiResult.rows[0],
-    followers: prevLatestFollowersResult.rows[0]?.followers || 0,
-  };
+  const previousKpiResult = { ...previousKpi, followers: prevLatestFollowers?.followers || 0 };
 
   return NextResponse.json({
     client: { name: client.name },
-    daily: dailyResult.rows,
-    kpi,
-    previous_kpi,
+    daily,
+    kpi: kpiResult,
+    previous_kpi: previousKpiResult,
   });
 }
