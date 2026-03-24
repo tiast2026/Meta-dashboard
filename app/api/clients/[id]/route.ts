@@ -7,7 +7,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const client = await queryOne(
+  const client = await queryOne<Record<string, unknown>>(
     `SELECT * FROM ${T} WHERE client_id = @id LIMIT 1`,
     { id: params.id }
   );
@@ -16,7 +16,14 @@ export async function GET(
     return NextResponse.json({ error: 'Client not found' }, { status: 404 });
   }
 
-  return NextResponse.json(client);
+  // Do NOT expose raw tokens — return boolean flags instead
+  const { instagram_access_token, meta_access_token, ...safe } = client;
+
+  return NextResponse.json({
+    ...safe,
+    has_instagram_token: !!instagram_access_token,
+    has_meta_token: !!meta_access_token,
+  });
 }
 
 export async function PUT(
@@ -31,6 +38,10 @@ export async function PUT(
     sets.push('name = @name');
     bqParams.name = body.name;
   }
+  if (body.slug !== undefined) {
+    sets.push('slug = @slug');
+    bqParams.slug = body.slug || null;
+  }
   if (body.instagram_account_id !== undefined) {
     sets.push('instagram_account_id = @ig_id');
     bqParams.ig_id = body.instagram_account_id;
@@ -38,6 +49,14 @@ export async function PUT(
   if (body.meta_ad_account_id !== undefined) {
     sets.push('meta_ad_account_id = @ad_id');
     bqParams.ad_id = body.meta_ad_account_id;
+  }
+  if (body.instagram_access_token !== undefined) {
+    sets.push('instagram_access_token = @ig_token');
+    bqParams.ig_token = body.instagram_access_token || null;
+  }
+  if (body.meta_access_token !== undefined) {
+    sets.push('meta_access_token = @meta_token');
+    bqParams.meta_token = body.meta_access_token || null;
   }
 
   if (sets.length === 0) {
@@ -51,8 +70,23 @@ export async function PUT(
     bqParams
   );
 
-  const updated = await queryOne(`SELECT * FROM ${T} WHERE client_id = @id LIMIT 1`, { id: params.id });
-  return NextResponse.json(updated);
+  // Re-fetch and strip tokens for response
+  const updated = await queryOne<Record<string, unknown>>(
+    `SELECT * FROM ${T} WHERE client_id = @id LIMIT 1`,
+    { id: params.id }
+  );
+
+  if (!updated) {
+    return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+  }
+
+  const { instagram_access_token, meta_access_token, ...safe } = updated;
+
+  return NextResponse.json({
+    ...safe,
+    has_instagram_token: !!instagram_access_token,
+    has_meta_token: !!meta_access_token,
+  });
 }
 
 export async function DELETE(
