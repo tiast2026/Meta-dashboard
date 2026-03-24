@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db, ensureDb } from '@/lib/db';
+import { queryRows, runDML, table, DATASET_MASTER } from '@/lib/bq';
 import { v4 as uuidv4 } from 'uuid';
+
+const T = table(DATASET_MASTER, 'clients');
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -10,9 +12,8 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  await ensureDb();
-  const result = await db.execute('SELECT * FROM clients');
-  return NextResponse.json(result.rows);
+  const clients = await queryRows(`SELECT * FROM ${T} ORDER BY created_at DESC`);
+  return NextResponse.json(clients);
 }
 
 export async function POST(request: NextRequest) {
@@ -28,17 +29,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 });
   }
 
+  const client_id = uuidv4();
   const share_token = uuidv4();
 
-  await ensureDb();
-  const result = await db.execute({
-    sql: `INSERT INTO clients (name, instagram_account_id, meta_ad_account_id, share_token)
-     VALUES (?, ?, ?, ?)`,
-    args: [name, instagram_account_id || null, meta_ad_account_id || null, share_token],
-  });
+  await runDML(
+    `INSERT INTO ${T} (client_id, name, instagram_account_id, meta_ad_account_id, share_token, created_at, updated_at)
+     VALUES (@client_id, @name, @ig_id, @ad_id, @share_token, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP())`,
+    {
+      client_id,
+      name,
+      ig_id: instagram_account_id || null,
+      ad_id: meta_ad_account_id || null,
+      share_token,
+    }
+  );
 
   return NextResponse.json({
-    id: Number(result.lastInsertRowid),
+    client_id,
     name,
     instagram_account_id: instagram_account_id || null,
     meta_ad_account_id: meta_ad_account_id || null,

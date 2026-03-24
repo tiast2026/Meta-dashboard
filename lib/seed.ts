@@ -1,23 +1,23 @@
-import { db, ensureDb } from './db';
+import { queryOne, runDML, table, DATASET_MASTER } from './bq';
 import bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
 
 async function main() {
-  await ensureDb();
-
   const email = process.env.ADMIN_EMAIL || 'admin@example.com';
   const password = process.env.ADMIN_PASSWORD || 'admin123';
   const hash = bcrypt.hashSync(password, 10);
 
-  const existing = await db.execute({
-    sql: 'SELECT id FROM admin_users WHERE email = ?',
-    args: [email],
-  });
+  const existing = await queryOne(
+    `SELECT id FROM ${table(DATASET_MASTER, 'admin_users')} WHERE email = @email LIMIT 1`,
+    { email }
+  );
 
-  if (existing.rows.length === 0) {
-    await db.execute({
-      sql: 'INSERT INTO admin_users (email, password_hash) VALUES (?, ?)',
-      args: [email, hash],
-    });
+  if (!existing) {
+    await runDML(
+      `INSERT INTO ${table(DATASET_MASTER, 'admin_users')} (id, email, password_hash, created_at)
+       VALUES (@id, @email, @hash, CURRENT_TIMESTAMP())`,
+      { id: uuidv4(), email, hash }
+    );
     console.log(`Admin user created: ${email}`);
   } else {
     console.log(`Admin user already exists: ${email}`);
