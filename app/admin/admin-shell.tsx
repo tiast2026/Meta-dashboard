@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
@@ -38,16 +36,6 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             </Link>
           ))}
         </nav>
-        <Separator />
-        <div className="p-4">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => signOut({ callbackUrl: "/admin/login" })}
-          >
-            ログアウト
-          </Button>
-        </div>
       </aside>
 
       {/* Main content */}

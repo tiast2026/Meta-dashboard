@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { db, ensureDb } from '@/lib/db';
 import Papa from 'papaparse';
 import type { InStatement } from '@libsql/client';
@@ -34,11 +32,6 @@ function mapHeaders(row: Record<string, string>): Record<string, string> {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const formData = await request.formData();
   const file = formData.get('file') as File;
   const clientId = formData.get('client_id') as string;
