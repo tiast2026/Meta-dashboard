@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDb } from '@/lib/db';
+import type { InValue } from '@libsql/client';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { token: string } }
 ) {
-  const client = db.prepare('SELECT * FROM clients WHERE share_token = ?').get(params.token) as Record<string, unknown> | undefined;
+  await ensureDb();
+
+  const clientResult = await db.execute({
+    sql: 'SELECT * FROM clients WHERE share_token = ?',
+    args: [params.token],
+  });
+  const client = clientResult.rows[0];
 
   if (!client) {
     return NextResponse.json({ error: 'Client not found' }, { status: 404 });
@@ -15,11 +22,8 @@ export async function GET(
   const from = searchParams.get('from');
   const to = searchParams.get('to');
 
-  let query = `
-    SELECT * FROM instagram_posts
-    WHERE client_id = ?
-  `;
-  const queryParams: unknown[] = [client.id];
+  let query = `SELECT * FROM instagram_posts WHERE client_id = ?`;
+  const queryParams: InValue[] = [client.id as InValue];
 
   if (from) {
     query += ' AND posted_at >= ?';
@@ -32,7 +36,7 @@ export async function GET(
 
   query += ' ORDER BY posted_at DESC LIMIT 100';
 
-  const posts = db.prepare(query).all(...queryParams);
+  const result = await db.execute({ sql: query, args: queryParams });
 
-  return NextResponse.json(posts);
+  return NextResponse.json(result.rows);
 }

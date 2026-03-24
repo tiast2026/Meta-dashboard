@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDb } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { token: string } }
 ) {
-  const client = db.prepare('SELECT * FROM clients WHERE share_token = ?').get(params.token) as Record<string, unknown> | undefined;
+  await ensureDb();
+
+  const clientResult = await db.execute({
+    sql: 'SELECT * FROM clients WHERE share_token = ?',
+    args: [params.token],
+  });
+  const client = clientResult.rows[0];
 
   if (!client) {
     return NextResponse.json({ error: 'Client not found' }, { status: 404 });
@@ -19,7 +25,6 @@ export async function GET(
     return NextResponse.json({ error: 'from and to query params are required' }, { status: 400 });
   }
 
-  // Calculate previous period
   const fromDate = new Date(from);
   const toDate = new Date(to);
   const periodLength = toDate.getTime() - fromDate.getTime();
@@ -28,9 +33,8 @@ export async function GET(
   const prevFromStr = prevFrom.toISOString().split('T')[0];
   const prevToStr = prevTo.toISOString().split('T')[0];
 
-  // Daily aggregation
-  const daily = db.prepare(`
-    SELECT
+  const dailyResult = await db.execute({
+    sql: `SELECT
       date,
       COALESCE(SUM(impressions), 0) as impressions,
       COALESCE(SUM(reach), 0) as reach,
@@ -40,12 +44,12 @@ export async function GET(
     FROM meta_ad_insights
     WHERE client_id = ? AND date >= ? AND date <= ?
     GROUP BY date
-    ORDER BY date ASC
-  `).all(client.id, from, to);
+    ORDER BY date ASC`,
+    args: [client.id, from, to],
+  });
 
-  // Campaigns aggregation
-  const campaignsRaw = db.prepare(`
-    SELECT
+  const campaignsResult = await db.execute({
+    sql: `SELECT
       campaign_name,
       COALESCE(SUM(impressions), 0) as impressions,
       COALESCE(SUM(reach), 0) as reach,
@@ -54,18 +58,18 @@ export async function GET(
       COALESCE(SUM(spend), 0) as spend
     FROM meta_ad_insights
     WHERE client_id = ? AND date >= ? AND date <= ?
-    GROUP BY campaign_name
-  `).all(client.id, from, to) as Array<Record<string, unknown>>;
+    GROUP BY campaign_name`,
+    args: [client.id, from, to],
+  });
 
-  const campaigns = campaignsRaw.map((c) => ({
+  const campaigns = campaignsResult.rows.map((c) => ({
     ...c,
     cpc: (c.clicks as number) > 0 ? (c.spend as number) / (c.clicks as number) : 0,
     ctr: (c.impressions as number) > 0 ? ((c.clicks as number) / (c.impressions as number)) * 100 : 0,
   }));
 
-  // Adsets aggregation
-  const adsets = db.prepare(`
-    SELECT
+  const adsetsResult = await db.execute({
+    sql: `SELECT
       adset_name,
       COALESCE(SUM(impressions), 0) as impressions,
       COALESCE(SUM(reach), 0) as reach,
@@ -74,12 +78,12 @@ export async function GET(
       COALESCE(SUM(spend), 0) as spend
     FROM meta_ad_insights
     WHERE client_id = ? AND date >= ? AND date <= ?
-    GROUP BY adset_name
-  `).all(client.id, from, to);
+    GROUP BY adset_name`,
+    args: [client.id, from, to],
+  });
 
-  // Platforms aggregation
-  const platforms = db.prepare(`
-    SELECT
+  const platformsResult = await db.execute({
+    sql: `SELECT
       publisher_platform,
       COALESCE(SUM(impressions), 0) as impressions,
       COALESCE(SUM(reach), 0) as reach,
@@ -88,39 +92,42 @@ export async function GET(
       COALESCE(SUM(spend), 0) as spend
     FROM meta_ad_insights
     WHERE client_id = ? AND date >= ? AND date <= ?
-    GROUP BY publisher_platform
-  `).all(client.id, from, to);
+    GROUP BY publisher_platform`,
+    args: [client.id, from, to],
+  });
 
-  // KPI totals for current period
-  const kpiRaw = db.prepare(`
-    SELECT
+  const kpiRawResult = await db.execute({
+    sql: `SELECT
       COALESCE(SUM(spend), 0) as spend,
       COALESCE(SUM(impressions), 0) as impressions,
       COALESCE(SUM(reach), 0) as reach,
       COALESCE(SUM(clicks), 0) as clicks,
       COALESCE(SUM(results), 0) as results
     FROM meta_ad_insights
-    WHERE client_id = ? AND date >= ? AND date <= ?
-  `).get(client.id, from, to) as Record<string, number>;
+    WHERE client_id = ? AND date >= ? AND date <= ?`,
+    args: [client.id, from, to],
+  });
 
+  const kpiRaw = kpiRawResult.rows[0] as Record<string, number>;
   const kpi = {
     ...kpiRaw,
     cpc: kpiRaw.clicks > 0 ? kpiRaw.spend / kpiRaw.clicks : 0,
     ctr: kpiRaw.impressions > 0 ? (kpiRaw.clicks / kpiRaw.impressions) * 100 : 0,
   };
 
-  // KPI totals for previous period
-  const prevKpiRaw = db.prepare(`
-    SELECT
+  const prevKpiRawResult = await db.execute({
+    sql: `SELECT
       COALESCE(SUM(spend), 0) as spend,
       COALESCE(SUM(impressions), 0) as impressions,
       COALESCE(SUM(reach), 0) as reach,
       COALESCE(SUM(clicks), 0) as clicks,
       COALESCE(SUM(results), 0) as results
     FROM meta_ad_insights
-    WHERE client_id = ? AND date >= ? AND date <= ?
-  `).get(client.id, prevFromStr, prevToStr) as Record<string, number>;
+    WHERE client_id = ? AND date >= ? AND date <= ?`,
+    args: [client.id, prevFromStr, prevToStr],
+  });
 
+  const prevKpiRaw = prevKpiRawResult.rows[0] as Record<string, number>;
   const previous_kpi = {
     ...prevKpiRaw,
     cpc: prevKpiRaw.clicks > 0 ? prevKpiRaw.spend / prevKpiRaw.clicks : 0,
@@ -128,10 +135,10 @@ export async function GET(
   };
 
   return NextResponse.json({
-    daily,
+    daily: dailyResult.rows,
     campaigns,
-    adsets,
-    platforms,
+    adsets: adsetsResult.rows,
+    platforms: platformsResult.rows,
     kpi,
     previous_kpi,
   });
