@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { queryRows, runDML, table, DATASET_MASTER } from '@/lib/bq';
+import { queryRows, runDML, table, DATASET_MASTER, ensureClientColumns } from '@/lib/bq';
 import { v4 as uuidv4 } from 'uuid';
 
 const T = table(DATASET_MASTER, 'clients');
 
 export async function GET() {
+  await ensureClientColumns();
   const clients = await queryRows(`SELECT * FROM ${T} ORDER BY created_at DESC`);
   return NextResponse.json(clients);
 }

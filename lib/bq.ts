@@ -52,3 +52,22 @@ export async function runDML(
 ): Promise<void> {
   await getBQ().query({ query: sql, params });
 }
+
+// Migration: ensure all required columns exist in the clients table
+let migrationDone = false;
+export async function ensureClientColumns(): Promise<void> {
+  if (migrationDone) return;
+  const T = table(DATASET_MASTER, 'clients');
+  const columns = [
+    { name: 'slug', type: 'STRING' },
+  ];
+  for (const col of columns) {
+    try {
+      await getBQ().query({ query: `ALTER TABLE ${T} ADD COLUMN ${col.name} ${col.type}` });
+      console.log(`Added column ${col.name} to clients table`);
+    } catch {
+      // Column already exists - ignore
+    }
+  }
+  migrationDone = true;
+}
