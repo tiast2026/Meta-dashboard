@@ -196,8 +196,8 @@ function DashboardContent() {
           </div>
         )}
 
-        <Tabs value={tab} onValueChange={handleTabChange}>
-          <TabsList className="mb-8 bg-slate-800/50 border border-white/10">
+        <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="mb-8 bg-slate-800/50 border border-white/10 w-auto">
             <TabsTrigger value="instagram" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-500 data-[state=active]:text-white text-slate-400">Instagram分析</TabsTrigger>
             <TabsTrigger value="ads" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white text-slate-400">Meta広告</TabsTrigger>
           </TabsList>

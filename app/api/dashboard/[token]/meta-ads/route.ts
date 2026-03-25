@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, ensureDb } from '@/lib/db';
+import { queryOne, table, DATASET_MASTER } from '@/lib/bq';
+
+const T = table(DATASET_MASTER, 'clients');
 
 export async function GET(
   request: NextRequest,
@@ -8,24 +11,22 @@ export async function GET(
   try {
     await ensureDb();
 
-    const client = await db.execute({
-      sql: 'SELECT id FROM clients WHERE share_token = ? LIMIT 1',
-      args: [params.token],
-    });
+    const client = await queryOne<Record<string, unknown>>(
+      `SELECT client_id, name FROM ${T} WHERE share_token = @token LIMIT 1`,
+      { token: params.token }
+    );
 
-    if (!client.rows.length) {
+    if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    const clientId = client.rows[0].id;
+    const clientId = String(client.client_id);
 
     const { searchParams } = new URL(request.url);
     const from = searchParams.get('from');
     const to = searchParams.get('to');
 
-    // 広告データは全期間取得可能（from/toはオプション）
     const hasDateFilter = from && to;
-
     const dateCondition = hasDateFilter ? 'AND date >= ? AND date <= ?' : '';
     const dateArgs = hasDateFilter ? [from, to] : [];
 
@@ -69,19 +70,6 @@ export async function GET(
       ctr: Number(c.impressions) > 0 ? (Number(c.clicks) / Number(c.impressions)) * 100 : 0,
     }));
 
-    const adsets = await db.execute({
-      sql: `SELECT adset_name,
-        COALESCE(SUM(impressions), 0) as impressions,
-        COALESCE(SUM(reach), 0) as reach,
-        COALESCE(SUM(clicks), 0) as clicks,
-        COALESCE(SUM(results), 0) as results,
-        COALESCE(SUM(spend), 0) as spend
-      FROM meta_ad_insights
-      WHERE client_id = ? ${dateCondition}
-      GROUP BY adset_name`,
-      args: [clientId, ...dateArgs],
-    });
-
     const platforms = await db.execute({
       sql: `SELECT publisher_platform,
         COALESCE(SUM(impressions), 0) as impressions,
@@ -114,7 +102,6 @@ export async function GET(
       ctr: Number(kpiRaw.impressions) > 0 ? (Number(kpiRaw.clicks) / Number(kpiRaw.impressions)) * 100 : 0,
     };
 
-    // 前期間の比較データ
     const prevKpiResult = await db.execute({
       sql: `SELECT
         COALESCE(SUM(spend), 0) as spend,
@@ -134,7 +121,14 @@ export async function GET(
       ctr: Number(prevKpiRaw.impressions) > 0 ? (Number(prevKpiRaw.clicks) / Number(prevKpiRaw.impressions)) * 100 : 0,
     };
 
-    return NextResponse.json({ daily: daily.rows, campaigns, adsets: adsets.rows, platforms: platforms.rows, kpi, previous_kpi });
+    return NextResponse.json({
+      client: { name: client.name },
+      daily: daily.rows,
+      campaigns,
+      platforms: platforms.rows,
+      kpi,
+      previous_kpi,
+    });
   } catch (err) {
     console.error('Dashboard meta-ads error:', err);
     return NextResponse.json({ error: 'データの取得に失敗しました' }, { status: 500 });

@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
 
 interface Campaign {
   campaign_name: string
@@ -105,11 +105,9 @@ export function CampaignTable({ campaigns }: CampaignTableProps) {
   ]
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>キャンペーン別実績</CardTitle>
-      </CardHeader>
-      <CardContent className="px-0">
+    <div>
+      <h3 className="text-base font-semibold text-white mb-4">キャンペーン別実績</h3>
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -170,7 +168,7 @@ export function CampaignTable({ campaigns }: CampaignTableProps) {
             )}
           </TableBody>
         </Table>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

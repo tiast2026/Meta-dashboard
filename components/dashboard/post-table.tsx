@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
 
 interface Post {
   ig_post_id: string
@@ -77,135 +77,71 @@ export function PostTable({ posts }: PostTableProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>投稿パフォーマンス</CardTitle>
-      </CardHeader>
-      <CardContent className="px-0">
+    <div>
+      <h3 className="text-base font-semibold text-white mb-4">投稿パフォーマンス</h3>
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="pl-4">サムネイル</TableHead>
-              <TableHead>投稿内容</TableHead>
-              <TableHead>タイプ</TableHead>
-              <TableHead className="text-right">閲覧数</TableHead>
-              <TableHead className="text-right">リーチ</TableHead>
-              <TableHead className="text-right">いいね</TableHead>
-              <TableHead className="text-right">コメント</TableHead>
-              <TableHead className="text-right">保存</TableHead>
-              <TableHead className="text-right">シェア</TableHead>
-              <TableHead className="text-right pr-4">ER</TableHead>
+            <TableRow className="border-white/10">
+              <TableHead className="pl-4 text-slate-400">サムネイル</TableHead>
+              <TableHead className="text-slate-400">投稿内容</TableHead>
+              <TableHead className="text-slate-400">タイプ</TableHead>
+              <TableHead className="text-right text-slate-400">いいね</TableHead>
+              <TableHead className="text-right text-slate-400">コメント</TableHead>
+              <TableHead className="text-right text-slate-400">保存</TableHead>
+              <TableHead className="text-right pr-4 text-slate-400">ER</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {paginatedPosts.map((post) => (
-              <TableRow key={post.ig_post_id}>
+              <TableRow key={post.ig_post_id} className="border-white/10">
                 <TableCell className="pl-4">
                   {post.media_url ? (
-                    <img
-                      src={post.media_url}
-                      alt=""
-                      className="size-16 rounded-md object-cover"
-                    />
+                    <img src={post.media_url} alt="" className="size-12 rounded-lg object-cover" />
                   ) : (
-                    <div className="flex size-16 items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">
-                      N/A
-                    </div>
+                    <div className="flex size-12 items-center justify-center rounded-lg bg-slate-700 text-xs text-slate-400">N/A</div>
                   )}
                 </TableCell>
                 <TableCell className="max-w-[200px]">
-                  <a
-                    href={post.permalink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:underline"
-                  >
-                    <p className="truncate text-sm">
-                      {post.caption
-                        ? post.caption.length > 30
-                          ? post.caption.slice(0, 30) + "..."
-                          : post.caption
-                        : "-"}
-                    </p>
+                  <a href={post.permalink} target="_blank" rel="noopener noreferrer" className="hover:underline text-white">
+                    <p className="truncate text-sm">{post.caption ? (post.caption.length > 30 ? post.caption.slice(0, 30) + "..." : post.caption) : "-"}</p>
                   </a>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {format(parseISO(post.posted_at), "yyyy/MM/dd HH:mm")}
-                  </p>
+                  <p className="mt-0.5 text-xs text-slate-400">{format(parseISO(post.posted_at), "yyyy/MM/dd HH:mm")}</p>
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    variant={
-                      productTypeVariants[post.product_type] ?? "outline"
-                    }
-                  >
+                  <Badge variant={productTypeVariants[post.product_type] ?? "outline"}>
                     {productTypeLabels[post.product_type] ?? post.product_type}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {post.impressions.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {post.reach.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {post.likes.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {post.comments.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {post.saves.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {post.shares.toLocaleString()}
-                </TableCell>
-                <TableCell className="pr-4 text-right tabular-nums font-medium">
-                  {calcER(post).toFixed(2)}%
-                </TableCell>
+                <TableCell className="text-right tabular-nums text-slate-200">{post.likes.toLocaleString()}</TableCell>
+                <TableCell className="text-right tabular-nums text-slate-200">{post.comments.toLocaleString()}</TableCell>
+                <TableCell className="text-right tabular-nums text-slate-200">{post.saves.toLocaleString()}</TableCell>
+                <TableCell className="pr-4 text-right tabular-nums font-medium text-slate-200">{calcER(post).toFixed(2)}%</TableCell>
               </TableRow>
             ))}
             {paginatedPosts.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
-                  投稿データがありません
-                </TableCell>
+                <TableCell colSpan={7} className="h-24 text-center text-slate-400">投稿データがありません</TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
+      </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 pt-4">
-            <p className="text-sm text-muted-foreground">
-              {sortedPosts.length}件中 {page * PAGE_SIZE + 1}-
-              {Math.min((page + 1) * PAGE_SIZE, sortedPosts.length)}件を表示
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
-              >
-                <ChevronLeft className="size-4" />
-                前へ
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                {page + 1} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                disabled={page >= totalPages - 1}
-              >
-                次へ
-                <ChevronRight className="size-4" />
-              </Button>
-            </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4">
+          <p className="text-sm text-slate-400">{sortedPosts.length}件中 {page * PAGE_SIZE + 1}-{Math.min((page + 1) * PAGE_SIZE, sortedPosts.length)}件を表示</p>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} className="border-white/10 text-slate-300 hover:bg-slate-700">
+              <ChevronLeft className="size-4" /> 前へ
+            </Button>
+            <span className="text-sm text-slate-400">{page + 1} / {totalPages}</span>
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} className="border-white/10 text-slate-300 hover:bg-slate-700">
+              次へ <ChevronRight className="size-4" />
+            </Button>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      )}
+    </div>
   )
 }

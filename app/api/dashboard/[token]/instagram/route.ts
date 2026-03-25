@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, ensureDb } from '@/lib/db';
+import { queryOne, table, DATASET_MASTER } from '@/lib/bq';
+
+const T = table(DATASET_MASTER, 'clients');
 
 export async function GET(
   request: NextRequest,
@@ -8,17 +11,17 @@ export async function GET(
   try {
     await ensureDb();
 
-    const client = await db.execute({
-      sql: 'SELECT id, name FROM clients WHERE share_token = ? LIMIT 1',
-      args: [params.token],
-    });
+    const client = await queryOne<Record<string, unknown>>(
+      `SELECT client_id, name FROM ${T} WHERE share_token = @token LIMIT 1`,
+      { token: params.token }
+    );
 
-    if (!client.rows.length) {
+    if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    const clientId = client.rows[0].id;
-    const clientName = client.rows[0].name;
+    const clientId = String(client.client_id);
+    const clientName = String(client.name);
 
     const { searchParams } = new URL(request.url);
     const from = searchParams.get('from');
