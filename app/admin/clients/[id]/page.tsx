@@ -10,11 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Camera, Megaphone, KeyRound, Upload, CheckCircle2, XCircle, FileUp, Tag,
-  Wifi, WifiOff, Clock, ArrowLeft, Shield, Zap, Copy, Check, ExternalLink, Infinity,
+  Wifi, WifiOff, Clock, ArrowLeft, Shield, Zap, Copy, Check, ExternalLink, Infinity, Download,
 } from "lucide-react";
 
 interface Client { client_id: string; name: string; instagram_account_id: string; meta_ad_account_id: string; share_token: string; has_token: boolean; }
-interface UploadCard { key: string; title: string; description: string; endpoint: string; icon: React.ReactNode; bgColor: string; }
+interface UploadCard { key: string; title: string; description: string; endpoint: string; icon: React.ReactNode; bgColor: string; templateHeaders: string; }
 interface UploadState { uploading: boolean; message: string; success: boolean | null; }
 interface ConnectionResult { success: boolean; message: string; data?: Record<string, unknown>; }
 interface TokenInfo { valid: boolean; type?: string; expires_at?: string; scopes?: string[]; message?: string; }
@@ -90,11 +90,22 @@ export default function ClientDetailPage() {
   };
 
   const uploadCards: UploadCard[] = [
-    { key: "ig_daily", title: "Instagram日次データ", description: "アカウントの日次インサイト（インプレッション、リーチ等）", endpoint: "/api/import/instagram-daily", icon: <Camera className="w-5 h-5 text-pink-600" />, bgColor: "bg-pink-50" },
-    { key: "ig_posts", title: "Instagram投稿データ", description: "各投稿のパフォーマンス（いいね、コメント、保存等）", endpoint: "/api/import/instagram-posts", icon: <FileUp className="w-5 h-5 text-purple-600" />, bgColor: "bg-purple-50" },
-    { key: "ig_tagged", title: "タグ付け投稿", description: "他アカウントからのタグ付け投稿データ", endpoint: "/api/import/tagged-posts", icon: <Tag className="w-5 h-5 text-orange-600" />, bgColor: "bg-orange-50" },
-    { key: "meta_ads", title: "Meta広告データ", description: "キャンペーン・広告セットのパフォーマンスデータ", endpoint: "/api/import/meta-ads", icon: <Megaphone className="w-5 h-5 text-blue-600" />, bgColor: "bg-blue-50" },
+    { key: "ig_daily", title: "Instagram日次データ", description: "アカウントの日次インサイト（インプレッション、リーチ等）", endpoint: "/api/import/instagram", icon: <Camera className="w-5 h-5 text-pink-600" />, bgColor: "bg-pink-50", templateHeaders: "日付,閲覧数,リーチ,アクションを実行し,インタラクション数,コメント数,いいね数,保存数,シェア数,フォロワー数,フォロー数,投稿数" },
+    { key: "ig_posts", title: "Instagram投稿データ", description: "各投稿のパフォーマンス（いいね、コメント、保存等）", endpoint: "/api/import/instagram-posts", icon: <FileUp className="w-5 h-5 text-purple-600" />, bgColor: "bg-purple-50", templateHeaders: "ID,投稿内容,メディアのプロダクトタイプ,メディアの種別,メディアURL,投稿URL,投稿日時,閲覧数,リーチ,インタラクション数,いいね数,コメント数,保存数,シェア数" },
+    { key: "ig_tagged", title: "タグ付け投稿", description: "他アカウントからのタグ付け投稿データ", endpoint: "/api/import/tagged-posts", icon: <Tag className="w-5 h-5 text-orange-600" />, bgColor: "bg-orange-50", templateHeaders: "ID,投稿日時,アカウント名,投稿内容,メディアURL,投稿URL,いいね数,コメント数" },
+    { key: "meta_ads", title: "Meta広告データ", description: "キャンペーン・広告セットのパフォーマンスデータ", endpoint: "/api/import/meta-ads", icon: <Megaphone className="w-5 h-5 text-blue-600" />, bgColor: "bg-blue-50", templateHeaders: "日付,パブリッシャープラットフォーム,キャンペーンID,キャンペーン名,キャンペーンの目的,広告セットID,広告セット名,広告ID,広告名,インプレッション,リーチ,クリック,結果,ウェブサイト,消化金額" },
   ];
+
+  const downloadTemplate = (card: UploadCard) => {
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + card.templateHeaders + "\n"], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${card.key}_template.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleUpload = async (card: UploadCard) => {
     const fileInput = fileRefs.current[card.key];
@@ -191,6 +202,7 @@ export default function ClientDetailPage() {
             <div key={card.key} className="rounded-xl border border-gray-200 p-5 hover:border-gray-300 transition-colors">
               <div className="flex items-center gap-3 mb-1"><div className={`w-10 h-10 rounded-lg ${card.bgColor} flex items-center justify-center`}>{card.icon}</div><div><h4 className="font-semibold text-gray-900 text-sm">{card.title}</h4><p className="text-xs text-gray-500">{card.description}</p></div></div>
               <div className="space-y-3 mt-4">
+                <Button variant="ghost" size="sm" className="w-full text-xs text-gray-500 hover:text-indigo-600 justify-start" onClick={() => downloadTemplate(card)}><Download className="w-3.5 h-3.5 mr-1.5" />テンプレートCSVをダウンロード</Button>
                 <Input type="file" accept=".csv" ref={(el) => { fileRefs.current[card.key] = el; }} className="text-sm file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100" />
                 <Button onClick={() => handleUpload(card)} disabled={state?.uploading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm" size="sm">{state?.uploading ? (<><div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white mr-2" />アップロード中...</>) : (<><Upload className="w-3.5 h-3.5 mr-2" />アップロード</>)}</Button>
                 {state?.message && (<div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${state.success ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{state.success ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <XCircle className="w-4 h-4 flex-shrink-0" />}{state.message}</div>)}
