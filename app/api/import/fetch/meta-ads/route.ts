@@ -30,16 +30,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Meta広告アカウントIDが設定されていません' }, { status: 400 });
     }
 
-    // Default: last 30 days
-    const now = new Date();
-    const defaultUntil = now.toISOString().slice(0, 10);
-    const defaultSince = new Date(now.getTime() - 30 * 86400000).toISOString().slice(0, 10);
-
-    const insights = await fetchMetaAds(
-      adAccountId, token,
-      since || defaultSince,
-      until || defaultUntil
-    );
+    // Default: max 37 months (no since/until = full history)
+    const insights = await fetchMetaAds(adAccountId, token, since, until);
 
     if (insights.length === 0) {
       return NextResponse.json({ success: true, message: '取得可能な広告データがありませんでした', rowCount: 0 });
