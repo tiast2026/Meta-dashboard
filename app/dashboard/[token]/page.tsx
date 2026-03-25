@@ -168,40 +168,46 @@ function DashboardContent() {
   }));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
               {clientName || "ダッシュボード"}
             </h1>
-            <p className="text-sm text-slate-400">
-              Analytics Dashboard
-            </p>
+            <p className="text-sm text-gray-500">Analytics Dashboard</p>
           </div>
-          <DateRangePicker
-            from={from}
-            to={to}
-            onChange={handleDateChange}
-          />
+          <div className="flex items-center gap-4">
+            <Tabs value={tab} onValueChange={handleTabChange} className="hidden sm:block">
+              <TabsList>
+                <TabsTrigger value="instagram">Instagram分析</TabsTrigger>
+                <TabsTrigger value="ads">Meta広告</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <DateRangePicker from={from} to={to} onChange={handleDateChange} />
+          </div>
+        </div>
+        {/* Mobile tabs */}
+        <div className="sm:hidden px-4 pb-3">
+          <Tabs value={tab} onValueChange={handleTabChange}>
+            <TabsList className="w-full">
+              <TabsTrigger value="instagram" className="flex-1">Instagram分析</TabsTrigger>
+              <TabsTrigger value="ads" className="flex-1">Meta広告</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {error && (
-          <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
             {error}
           </div>
         )}
 
-        <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="mb-8 bg-slate-800/50 border border-white/10 w-auto">
-            <TabsTrigger value="instagram" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-500 data-[state=active]:text-white text-slate-400">Instagram分析</TabsTrigger>
-            <TabsTrigger value="ads" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white text-slate-400">Meta広告</TabsTrigger>
-          </TabsList>
-
+        <Tabs value={tab} onValueChange={handleTabChange}>
           {/* Instagram Tab */}
           <TabsContent value="instagram">
             {loading ? (
@@ -219,7 +225,6 @@ function DashboardContent() {
                     )}
                     icon={<Users className="h-4 w-4" />}
                     suffix="人"
-                    color="pink"
                   />
                   <KpiCard
                     title="インプレッション"
@@ -229,7 +234,6 @@ function DashboardContent() {
                       igPrevKpi.impressions || 0
                     )}
                     icon={<Eye className="h-4 w-4" />}
-                    color="blue"
                   />
                   <KpiCard
                     title="リーチ"
@@ -239,7 +243,6 @@ function DashboardContent() {
                       igPrevKpi.reach || 0
                     )}
                     icon={<Target className="h-4 w-4" />}
-                    color="purple"
                   />
                   <KpiCard
                     title="いいね"
@@ -249,7 +252,6 @@ function DashboardContent() {
                       igPrevKpi.likes || 0
                     )}
                     icon={<Heart className="h-4 w-4" />}
-                    color="emerald"
                   />
                   <KpiCard
                     title="フォロー増加"
@@ -259,28 +261,27 @@ function DashboardContent() {
                       igPrevKpi.follows || 0
                     )}
                     icon={<UserPlus className="h-4 w-4" />}
-                    color="amber"
                   />
                 </div>
 
                 {/* Charts */}
                 <div className="grid gap-6 lg:grid-cols-2">
-                  <div className="rounded-2xl border border-white/10 bg-slate-800/50 p-6 backdrop-blur">
+                  <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                     <FollowerTrendChart data={followerData} />
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-slate-800/50 p-6 backdrop-blur">
+                  <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                     <EngagementChart data={engagementData} />
                   </div>
                 </div>
 
                 {/* Post Performance Table */}
-                <div className="rounded-2xl border border-white/10 bg-slate-800/50 p-6 backdrop-blur">
+                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                   <PostTable posts={posts as never[]} />
                 </div>
 
                 {/* Tagged Posts Table */}
                 {taggedPosts.length > 0 && (
-                  <div className="rounded-2xl border border-white/10 bg-slate-800/50 p-6 backdrop-blur">
+                  <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                     <TaggedPostsTable posts={taggedPosts as never[]} />
                   </div>
                 )}
@@ -304,7 +305,6 @@ function DashboardContent() {
                       adsPrevKpi.spend || 0
                     )}
                     prefix="¥"
-                    color="amber"
                   />
                   <KpiCard
                     title="インプレッション"
@@ -314,7 +314,6 @@ function DashboardContent() {
                       adsPrevKpi.impressions || 0
                     )}
                     icon={<Eye className="h-4 w-4" />}
-                    color="blue"
                   />
                   <KpiCard
                     title="リーチ"
@@ -324,7 +323,6 @@ function DashboardContent() {
                       adsPrevKpi.reach || 0
                     )}
                     icon={<Target className="h-4 w-4" />}
-                    color="purple"
                   />
                   <KpiCard
                     title="クリック"
@@ -334,7 +332,6 @@ function DashboardContent() {
                       adsPrevKpi.clicks || 0
                     )}
                     icon={<MousePointerClick className="h-4 w-4" />}
-                    color="emerald"
                   />
                   <KpiCard
                     title="CPC"
@@ -344,23 +341,22 @@ function DashboardContent() {
                       adsPrevKpi.cpc || 0
                     )}
                     prefix="¥"
-                    color="pink"
                   />
                 </div>
 
                 {/* Daily Trend Chart */}
-                <div className="rounded-2xl border border-white/10 bg-slate-800/50 p-6 backdrop-blur">
+                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                   <DailyTrendChart data={adsDaily as never[]} />
                 </div>
 
                 {/* Campaign Table */}
-                <div className="rounded-2xl border border-white/10 bg-slate-800/50 p-6 backdrop-blur">
+                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                   <CampaignTable campaigns={campaigns as never[]} />
                 </div>
 
                 {/* Platform Breakdown */}
                 {platforms.length > 0 && (
-                  <div className="rounded-2xl border border-white/10 bg-slate-800/50 p-6 backdrop-blur">
+                  <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                     <PlatformBreakdown data={platforms as never[]} />
                   </div>
                 )}
@@ -380,15 +376,15 @@ function LoadingSkeleton() {
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="h-[130px] animate-pulse rounded-2xl bg-slate-800/50 border border-white/10"
+            className="h-[130px] animate-pulse rounded-xl bg-gray-100 border border-gray-200"
           />
         ))}
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="h-[380px] animate-pulse rounded-2xl bg-slate-800/50 border border-white/10" />
-        <div className="h-[380px] animate-pulse rounded-2xl bg-slate-800/50 border border-white/10" />
+        <div className="h-[380px] animate-pulse rounded-xl bg-gray-100 border border-gray-200" />
+        <div className="h-[380px] animate-pulse rounded-xl bg-gray-100 border border-gray-200" />
       </div>
-      <div className="h-[400px] animate-pulse rounded-2xl bg-slate-800/50 border border-white/10" />
+      <div className="h-[400px] animate-pulse rounded-xl bg-gray-100 border border-gray-200" />
     </div>
   );
 }

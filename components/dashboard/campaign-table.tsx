@@ -106,7 +106,7 @@ export function CampaignTable({ campaigns }: CampaignTableProps) {
 
   return (
     <div>
-      <h3 className="text-base font-semibold text-white mb-4">キャンペーン別実績</h3>
+      <h3 className="text-base font-semibold text-gray-900 mb-4">キャンペーン別実績</h3>
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>

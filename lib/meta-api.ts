@@ -138,7 +138,7 @@ export async function fetchIgPosts(
   igAccountId: string,
   token: string,
 ): Promise<IgPost[]> {
-  const fields = 'id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count';
+  const fields = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count';
   const posts: IgPost[] = [];
   let nextUrl: string | null = `${BASE_URL}/${igAccountId}/media?fields=${fields}&limit=${POSTS_PAGE_LIMIT}&access_token=${token}`;
   let page = 0;
@@ -152,7 +152,7 @@ export async function fetchIgPosts(
         ig_post_id: String(media.id),
         caption: String(media.caption || ''),
         media_type: String(media.media_type || ''),
-        media_url: String(media.media_url || ''),
+        media_url: String(media.thumbnail_url || media.media_url || ''),
         permalink: String(media.permalink || ''),
         posted_at: String(media.timestamp || ''),
         impressions: 0,

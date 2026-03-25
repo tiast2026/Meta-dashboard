@@ -30,7 +30,7 @@ export function EngagementChart({ data }: EngagementChartProps) {
 
   return (
     <div>
-      <h3 className="text-base font-semibold text-white mb-4">エンゲージメント推移</h3>
+      <h3 className="text-base font-semibold text-gray-900 mb-4">エンゲージメント推移</h3>
       <div className="h-[320px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={formatted} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
@@ -52,11 +52,11 @@ export function EngagementChart({ data }: EngagementChartProps) {
                 <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-            <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
-            <YAxis tick={{ fontSize: 12, fill: "#94a3b8" }} tickLine={false} axisLine={false} tickFormatter={(v) => v.toLocaleString()} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#6b7280" }} tickLine={false} axisLine={false} />
+            <YAxis tick={{ fontSize: 12, fill: "#6b7280" }} tickLine={false} axisLine={false} tickFormatter={(v) => v.toLocaleString()} />
             <Tooltip
-              contentStyle={{ backgroundColor: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", fontSize: "13px", color: "#e2e8f0" }}
+              contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "13px", color: "#1f2937", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}
               formatter={(value: unknown, name: unknown) => {
                 const labels: Record<string, string> = { likes: "いいね", comments: "コメント", saves: "保存", shares: "シェア" };
                 return [Number(value).toLocaleString(), labels[String(name)] ?? String(name)];
@@ -64,7 +64,7 @@ export function EngagementChart({ data }: EngagementChartProps) {
             />
             <Legend formatter={(value) => {
               const labels: Record<string, string> = { likes: "いいね", comments: "コメント", saves: "保存", shares: "シェア" };
-              return <span style={{ color: "#94a3b8" }}>{labels[value] ?? value}</span>;
+              return <span style={{ color: "#6b7280" }}>{labels[value] ?? value}</span>;
             }} />
             <Area type="monotone" dataKey="likes" stackId="1" stroke="#ec4899" fill="url(#engLikes)" strokeWidth={2} />
             <Area type="monotone" dataKey="comments" stackId="1" stroke="#3b82f6" fill="url(#engComments)" strokeWidth={2} />
