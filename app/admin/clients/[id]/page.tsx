@@ -88,6 +88,8 @@ export default function ClientDetailPage() {
   const [pageSelectOpen, setPageSelectOpen] = useState(false);
   const [permanentMessage, setPermanentMessage] = useState<{ type: string; text: string } | null>(null);
   const [fetchStates, setFetchStates] = useState<Record<string, { loading: boolean; message: string; success: boolean | null }>>({});
+  const [pasteText, setPasteText] = useState("");
+  const [pasteState, setPasteState] = useState<{ loading: boolean; message: string; success: boolean | null }>({ loading: false, message: "", success: null });
 
   const fetchClient = useCallback(async () => {
     try {
@@ -217,6 +219,27 @@ export default function ClientDetailPage() {
       if (card.needsIg && !client?.instagram_account_id) continue;
       if (card.needsAd && !client?.meta_ad_account_id) continue;
       await fetchFromApi(card);
+    }
+  };
+
+  const handlePasteImport = async () => {
+    if (!pasteText.trim()) return;
+    setPasteState({ loading: true, message: "", success: null });
+    try {
+      const res = await fetch("/api/import/paste/instagram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client_id: clientId, text: pasteText }),
+      });
+      const data = await res.json();
+      setPasteState({
+        loading: false,
+        message: res.ok ? (data.message || "インポート完了") : (data.error || "インポートに失敗しました"),
+        success: res.ok,
+      });
+      if (res.ok) setPasteText("");
+    } catch {
+      setPasteState({ loading: false, message: "通信エラーが発生しました", success: false });
     }
   };
 
@@ -418,7 +441,7 @@ export default function ClientDetailPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><Download className="w-5 h-5 text-gray-400" />API データ取得</h3>
-              <p className="text-sm text-gray-500 mt-0.5">Meta Graph APIからデータを自動取得します（直近30日分）</p>
+              <p className="text-sm text-gray-500 mt-0.5">Meta Graph APIからデータを自動取得（IG: 最大2年 / 投稿: 全件 / 広告: 最大37ヶ月）</p>
             </div>
             <Button variant="outline" size="sm" onClick={fetchAllFromApi} disabled={Object.values(fetchStates).some((s) => s.loading)}>
               <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${Object.values(fetchStates).some((s) => s.loading) ? "animate-spin" : ""}`} />
@@ -460,6 +483,55 @@ export default function ClientDetailPage() {
           </div>
         </div>
       )}
+
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 shadow-sm">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Camera className="w-5 h-5 text-pink-500" />
+            Instagramインサイト コピペ取込
+          </h3>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Instagramプロフェッショナルダッシュボードからコピーしたデータを貼り付けてインポートします
+          </p>
+        </div>
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 mb-3 text-xs text-gray-500">
+          <p className="font-medium text-gray-700 mb-1">対応フォーマット:</p>
+          <p>タブ区切り or カンマ区切り。ヘッダー行あり/なし両対応。</p>
+          <p className="mt-1 font-mono text-[11px]">日付, インプレッション, リーチ, フォロワー数, ...</p>
+          <p className="font-mono text-[11px]">2024-01-01, 1234, 567, 890, ...</p>
+        </div>
+        <textarea
+          value={pasteText}
+          onChange={(e) => setPasteText(e.target.value)}
+          placeholder="ここにデータを貼り付けてください..."
+          className="w-full h-40 rounded-lg border border-gray-300 p-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y"
+        />
+        <div className="flex items-center gap-3 mt-3">
+          <Button
+            onClick={handlePasteImport}
+            disabled={pasteState.loading || !pasteText.trim()}
+            className="bg-pink-600 hover:bg-pink-700 text-white shadow-sm"
+            size="sm"
+          >
+            {pasteState.loading ? (
+              <><div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white mr-2" />インポート中...</>
+            ) : (
+              <><Upload className="w-3.5 h-3.5 mr-2" />インポート</>
+            )}
+          </Button>
+          {pasteText && (
+            <Button variant="ghost" size="sm" onClick={() => setPasteText("")} className="text-gray-500 text-xs">
+              クリア
+            </Button>
+          )}
+        </div>
+        {pasteState.message && (
+          <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 mt-3 ${pasteState.success ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+            {pasteState.success ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <XCircle className="w-4 h-4 flex-shrink-0" />}
+            {pasteState.message}
+          </div>
+        )}
+      </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <div className="mb-6">
