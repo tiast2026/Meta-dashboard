@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -40,21 +40,6 @@ interface Client {
   has_token: boolean;
 }
 
-interface UploadCard {
-  key: string;
-  title: string;
-  description: string;
-  endpoint: string;
-  icon: React.ReactNode;
-  bgColor: string;
-}
-
-interface UploadState {
-  uploading: boolean;
-  message: string;
-  success: boolean | null;
-}
-
 interface ConnectionResult {
   success: boolean;
   message: string;
@@ -75,8 +60,6 @@ export default function ClientDetailPage() {
   const [client, setClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [uploadStates, setUploadStates] = useState<Record<string, UploadState>>({});
-  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [connectionResults, setConnectionResults] = useState<Record<string, ConnectionResult> | null>(null);
   const [testingConnection, setTestingConnection] = useState(false);
   const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
@@ -241,30 +224,6 @@ export default function ClientDetailPage() {
     } catch {
       setPasteState({ loading: false, message: "通信エラーが発生しました", success: false });
     }
-  };
-
-  const uploadCards: UploadCard[] = [
-    { key: "ig_daily", title: "Instagram日次データ", description: "アカウントの日次インサイト（インプレッション、リーチ等）", endpoint: "/api/import/instagram-daily", icon: <Camera className="w-5 h-5 text-pink-600" />, bgColor: "bg-pink-50" },
-    { key: "ig_posts", title: "Instagram投稿データ", description: "各投稿のパフォーマンス（いいね、コメント、保存等）", endpoint: "/api/import/instagram-posts", icon: <FileUp className="w-5 h-5 text-purple-600" />, bgColor: "bg-purple-50" },
-    { key: "ig_tagged", title: "タグ付け投稿", description: "他アカウントからのタグ付け投稿データ", endpoint: "/api/import/tagged-posts", icon: <Tag className="w-5 h-5 text-orange-600" />, bgColor: "bg-orange-50" },
-    { key: "meta_ads", title: "Meta広告データ", description: "キャンペーン・広告セットのパフォーマンスデータ", endpoint: "/api/import/meta-ads", icon: <Megaphone className="w-5 h-5 text-blue-600" />, bgColor: "bg-blue-50" },
-  ];
-
-  const handleUpload = async (card: UploadCard) => {
-    const fileInput = fileRefs.current[card.key];
-    if (!fileInput?.files?.length) return;
-    const formData = new FormData();
-    formData.append("file", fileInput.files[0]);
-    formData.append("client_id", clientId);
-    setUploadStates((prev) => ({ ...prev, [card.key]: { uploading: true, message: "", success: null } }));
-    try {
-      const res = await fetch(card.endpoint, { method: "POST", body: formData });
-      const data = await res.json();
-      setUploadStates((prev) => ({ ...prev, [card.key]: { uploading: false, message: res.ok ? (data.message || "アップロード完了") : (data.error || "アップロードに失敗しました"), success: res.ok } }));
-    } catch {
-      setUploadStates((prev) => ({ ...prev, [card.key]: { uploading: false, message: "通信エラーが発生しました", success: false } }));
-    }
-    if (fileInput) fileInput.value = "";
   };
 
   const formatExpiry = (expiresAt: string | undefined) => {
@@ -531,38 +490,6 @@ export default function ClientDetailPage() {
             {pasteState.message}
           </div>
         )}
-      </div>
-
-      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><Upload className="w-5 h-5 text-gray-400" />CSVデータ取込</h3>
-          <p className="text-sm text-gray-500 mt-0.5">CSVファイルを選択してBigQueryにデータをインポートします</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {uploadCards.map((card) => {
-            const state = uploadStates[card.key];
-            return (
-              <div key={card.key} className="rounded-xl border border-gray-200 p-5 hover:border-gray-300 transition-colors">
-                <div className="flex items-center gap-3 mb-1">
-                  <div className={`w-10 h-10 rounded-lg ${card.bgColor} flex items-center justify-center`}>{card.icon}</div>
-                  <div><h4 className="font-semibold text-gray-900 text-sm">{card.title}</h4><p className="text-xs text-gray-500">{card.description}</p></div>
-                </div>
-                <div className="space-y-3 mt-4">
-                  <Input type="file" accept=".csv" ref={(el) => { fileRefs.current[card.key] = el; }} className="text-sm file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100" />
-                  <Button onClick={() => handleUpload(card)} disabled={state?.uploading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm" size="sm">
-                    {state?.uploading ? (<><div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white mr-2" />アップロード中...</>) : (<><Upload className="w-3.5 h-3.5 mr-2" />アップロード</>)}
-                  </Button>
-                  {state?.message && (
-                    <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${state.success ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
-                      {state.success ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <XCircle className="w-4 h-4 flex-shrink-0" />}
-                      {state.message}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
