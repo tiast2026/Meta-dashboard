@@ -60,6 +60,11 @@ export async function ensureClientColumns(): Promise<void> {
   const T = table(DATASET_MASTER, 'clients');
   const columns = [
     { name: 'slug', type: 'STRING' },
+    { name: 'instagram_account_id', type: 'STRING' },
+    { name: 'meta_ad_account_id', type: 'STRING' },
+    { name: 'meta_access_token', type: 'STRING' },
+    { name: 'share_token', type: 'STRING' },
+    { name: 'updated_at', type: 'TIMESTAMP' },
   ];
   for (const col of columns) {
     try {
