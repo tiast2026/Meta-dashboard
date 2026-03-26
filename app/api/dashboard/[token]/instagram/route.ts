@@ -104,7 +104,8 @@ export async function GET(
 
     // Fallback: if daily insights are empty, compute KPI from posts
     const hasDaily = daily.rows.length > 0;
-    let finalKpi = kpiResult;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let finalKpi: any = kpiResult;
     if (!hasDaily) {
       const postKpi = await db.execute({
         sql: `SELECT
@@ -120,8 +121,7 @@ export async function GET(
         args: [clientId, from, to + 'T23:59:59'],
       });
       if (postKpi.rows[0]) {
-        const pRow = postKpi.rows[0] as Record<string, unknown>;
-        finalKpi = { ...pRow, followers: 0, follows: 0, interactions: 0 };
+        finalKpi = { ...Object.fromEntries(Object.entries(postKpi.rows[0])), followers: 0, follows: 0, interactions: 0 };
       }
     }
 

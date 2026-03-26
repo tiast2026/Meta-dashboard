@@ -11,7 +11,7 @@ import {
   MousePointerClick,
   Target,
 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { DateRangePicker } from "@/components/dashboard/date-range-picker";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { FollowerTrendChart } from "@/components/dashboard/follower-trend-chart";
