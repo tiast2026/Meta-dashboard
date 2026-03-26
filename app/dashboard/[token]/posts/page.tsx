@@ -96,6 +96,35 @@ function PostsContent() {
               ))}
             </div>
 
+            {/* Post type breakdown */}
+            <div className="rounded-xl border border-gray-200 bg-white p-6">
+              <h2 className="text-base font-semibold text-gray-900 mb-4">投稿タイプ別集計</h2>
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                {(() => {
+                  const typeCounts: Record<string, { count: number; likes: number; comments: number }> = {};
+                  posts.forEach((p) => {
+                    const t = p.media_type || p.product_type || "OTHER";
+                    if (!typeCounts[t]) typeCounts[t] = { count: 0, likes: 0, comments: 0 };
+                    typeCounts[t].count++;
+                    typeCounts[t].likes += p.likes || 0;
+                    typeCounts[t].comments += p.comments || 0;
+                  });
+                  const labels: Record<string, string> = { IMAGE: "画像", VIDEO: "動画", CAROUSEL_ALBUM: "カルーセル", REELS: "リール", FEED: "フィード" };
+                  return Object.entries(typeCounts).map(([type, data]) => (
+                    <div key={type} className="rounded-lg border border-gray-100 p-4">
+                      <p className="text-sm font-medium text-gray-700 mb-2">{labels[type] || type}</p>
+                      <p className="text-2xl font-bold text-gray-900">{data.count}<span className="text-sm font-normal text-gray-400 ml-1">件</span></p>
+                      <div className="mt-2 flex gap-3 text-xs text-gray-500">
+                        <span>♥ {data.likes.toLocaleString()}</span>
+                        <span>💬 {data.comments.toLocaleString()}</span>
+                        <span>平均♥ {data.count > 0 ? Math.round(data.likes / data.count) : 0}</span>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+
             {/* Post Table */}
             <div className="rounded-xl border border-gray-200 bg-white p-6">
               <div className="flex items-center justify-between mb-4">

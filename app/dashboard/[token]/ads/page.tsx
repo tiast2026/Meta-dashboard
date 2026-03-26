@@ -52,12 +52,19 @@ function AdsContent() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
               <KpiCard title="消化金額" value={Math.round(Number(kpi.spend) || 0)} change={calcChange(Number(kpi.spend) || 0, Number(prevKpi.spend) || 0)} prefix="¥" />
               <KpiCard title="インプレッション" value={Number(kpi.impressions) || 0} change={calcChange(Number(kpi.impressions) || 0, Number(prevKpi.impressions) || 0)} icon={<Eye className="h-4 w-4" />} />
               <KpiCard title="リーチ" value={Number(kpi.reach) || 0} change={calcChange(Number(kpi.reach) || 0, Number(prevKpi.reach) || 0)} icon={<Target className="h-4 w-4" />} />
               <KpiCard title="クリック" value={Number(kpi.clicks) || 0} change={calcChange(Number(kpi.clicks) || 0, Number(prevKpi.clicks) || 0)} icon={<MousePointerClick className="h-4 w-4" />} />
-              <KpiCard title="CPC" value={Math.round(Number(kpi.cpc) || 0)} change={calcChange(Number(kpi.cpc) || 0, Number(prevKpi.cpc) || 0)} prefix="¥" />
+            </div>
+
+            {/* Second row: calculated metrics */}
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <KpiCard title="CPC (クリック単価)" value={"¥" + Math.round(Number(kpi.cpc) || 0).toLocaleString()} change={calcChange(Number(kpi.cpc) || 0, Number(prevKpi.cpc) || 0)} />
+              <KpiCard title="CTR (クリック率)" value={(Number(kpi.ctr) || 0).toFixed(2) + "%"} change={calcChange(Number(kpi.ctr) || 0, Number(prevKpi.ctr) || 0)} />
+              <KpiCard title="CPM (千人単価)" value={"¥" + (Number(kpi.impressions) > 0 ? Math.round(Number(kpi.spend) / Number(kpi.impressions) * 1000) : 0).toLocaleString()} />
+              <KpiCard title="成果数" value={Number(kpi.results) || 0} change={calcChange(Number(kpi.results) || 0, Number(prevKpi.results) || 0)} />
             </div>
 
             <div className="rounded-xl border border-gray-200 bg-white p-6">
